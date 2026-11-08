@@ -1,0 +1,6 @@
+{
+  "name": "Nafas Infant AI Platform",
+  "description": "منصة ذكاء اصطناعي متطورة لتحليل بكاء الأطفال وفهم احتياجات الرضيع عبر 12 ركيزة تقنية وتجارية متقدمة.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
