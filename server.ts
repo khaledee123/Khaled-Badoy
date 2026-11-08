@@ -33,7 +33,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     hasGeminiKey: Boolean(geminiApiKey),
-    platform: 'Nafas Infant AI Platform v1.0',
+    platform: 'WAFAA AI Platform v2.0',
     timestamp: new Date().toISOString(),
   });
 });
@@ -242,7 +242,7 @@ app.post('/api/analyze-cry', async (req: Request, res: Response) => {
     if (ai && geminiApiKey) {
       try {
         const promptText = `
-You are Nafas Infant AI Platform, a world-class clinical pediatric acoustic intelligence system.
+You are WAFAA AI Platform, a world-class clinical pediatric acoustic intelligence system.
 Analyze the following infant crying data and return an enterprise-grade multi-probability breakdown.
 
 INFANT PROFILE:
@@ -381,7 +381,7 @@ async function startServer() {
   }
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(`[Nafas Platform] Listening on http://0.0.0.0:${port}`);
+    console.log(`[WAFAA AI Platform] Listening on http://0.0.0.0:${port}`);
   });
 }
 

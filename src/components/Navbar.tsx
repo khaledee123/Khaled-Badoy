@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">
-                {isAr ? 'نَفَس للأطفال' : 'Nafas Infant AI'}
+                {isAr ? 'منصة وفاء الذكية | WAFAA AI' : 'WAFAA AI'}
               </span>
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
                 {isAr ? 'منصة سريرية معتمدة' : 'Clinical Platform'}

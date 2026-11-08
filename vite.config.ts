@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'منصة نَفَس الذكية | Nafas Infant AI Platform',
-          short_name: 'نَفَس',
-          description: 'منصة ذكاء اصطناعي سريرية متقدمة لتحليل بكاء الأطفال وفهم احتياجات الرضيع عبر 12 ركيزة تقنية.',
+          name: 'منصة وفاء الذكية | WAFAA AI',
+          short_name: 'WAFAA AI',
+          description: 'منصة وفاء الذكية WAFAA AI - ذكاء اصطناعي سريري متقدم لتحليل بكاء الأطفال وفهم احتياجات الرضيع.',
           theme_color: '#4F46E5',
           background_color: '#0F172A',
           display: 'standalone',
