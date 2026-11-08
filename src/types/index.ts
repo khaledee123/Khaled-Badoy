@@ -70,3 +70,50 @@ export interface ClinicalPreset {
   sampleDescriptionAr: string;
   soundType: 'hunger_cry' | 'colic_screech' | 'tired_whine' | 'diaper_fuss' | 'burp_grunt';
 }
+
+export interface GrowthEntry {
+  id: string;
+  babyId: string;
+  date: string; // YYYY-MM-DD
+  ageWeeks: number;
+  weightKg: number;
+  heightCm: number;
+  headCircumferenceCm?: number;
+  whoWeightP50: number; // WHO median weight reference for age
+  whoHeightP50: number; // WHO median height reference for age
+  cryingEpisodesPerDay?: number;
+  notes?: string;
+}
+
+export type RoutineAlertType =
+  | 'feeding_due'
+  | 'wake_window_exceeded'
+  | 'diaper_due'
+  | 'witching_hour'
+  | 'cry_predicted';
+
+export interface RoutineAlert {
+  id: string;
+  type: RoutineAlertType;
+  severity: 'urgent' | 'warning' | 'info';
+  titleAr: string;
+  titleEn: string;
+  messageAr: string;
+  messageEn: string;
+  minutesElapsed: number;
+  timestamp: string;
+  actionType: 'feed' | 'sleep' | 'diaper' | 'soothe';
+  isRead: boolean;
+  isDismissed: boolean;
+}
+
+export interface NotificationSettings {
+  soundEnabled: boolean;
+  browserNotificationsEnabled: boolean;
+  feedingThresholdMinutes: number; // default 180 min
+  sleepThresholdMinutes: number; // default 90-120 min
+  diaperThresholdMinutes: number; // default 150 min
+  witchingHourEnabled: boolean;
+}
+
+

@@ -1,17 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Utensils, Moon, HeartHandshake, Check, RefreshCw, Zap } from 'lucide-react';
-import { RoutineStatus } from '../types';
+import {
+  Clock,
+  Utensils,
+  Moon,
+  HeartHandshake,
+  Check,
+  RefreshCw,
+  Zap,
+  Bell,
+  BellRing,
+  AlertTriangle,
+  Sparkles,
+} from 'lucide-react';
+import { RoutineStatus, RoutineAlert, BabyProfile } from '../types';
 
 interface BioRoutineViewProps {
   routine: RoutineStatus;
+  activeBaby: BabyProfile;
+  alerts: RoutineAlert[];
   lang: 'ar' | 'en';
   onUpdateRoutine: (updated: RoutineStatus) => void;
+  onOpenNotifications: () => void;
 }
 
 export const BioRoutineView: React.FC<BioRoutineViewProps> = ({
   routine,
+  activeBaby,
+  alerts,
   lang,
   onUpdateRoutine,
+  onOpenNotifications,
 }) => {
   const isAr = lang === 'ar';
   const [now, setNow] = useState(Date.now());
@@ -68,6 +86,61 @@ export const BioRoutineView: React.FC<BioRoutineViewProps> = ({
             : 'Integrating elapsed intervals since the last feeding, nap, and diaper change dynamically weights probabilistic accuracy.'}
         </p>
       </div>
+
+      {/* Predictive Routine Alerts & Missed Milestones Banner */}
+      {alerts && alerts.length > 0 && (
+        <div className="p-4 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 shadow-sm animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-indigo-100 dark:border-indigo-900">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                <BellRing className="w-4 h-4 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  {isAr
+                    ? `تنبيهات استباقية لنوبات البكاء المحتملة لـ ${activeBaby.name}`
+                    : `Predictive Cry & Milestone Alerts for ${activeBaby.name}`}
+                </h4>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300">
+                  {isAr
+                    ? 'اكتشف النظام مواقيت متأخرة قد تؤدي لبكاء حاد في حال عدم التدخل المبكر.'
+                    : 'System detected overdue intervals likely to trigger crying without proactive intervention.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenNotifications}
+              className="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors whitespace-nowrap self-start sm:self-auto"
+            >
+              {isAr ? 'فتح مركز الإشعارات الكامل' : 'Open Notification Center'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {alerts.slice(0, 2).map(alert => (
+              <div
+                key={alert.id}
+                className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/60 flex items-start gap-2.5 text-xs"
+              >
+                <AlertTriangle
+                  className={`w-4 h-4 shrink-0 mt-0.5 ${
+                    alert.severity === 'urgent' ? 'text-rose-600' : 'text-amber-500'
+                  }`}
+                />
+                <div className="flex-1">
+                  <div className="font-bold text-slate-900 dark:text-white">
+                    {isAr ? alert.titleAr : alert.titleEn}
+                  </div>
+                  <div className="text-slate-500 text-[11px] mt-0.5 line-clamp-1">
+                    {isAr ? alert.messageAr : alert.messageEn}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Routine Trackers Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

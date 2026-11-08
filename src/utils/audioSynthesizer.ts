@@ -440,6 +440,43 @@ class AudioEngine {
       this.stopSoothingTrack(k);
     });
   }
+
+  // Gentle two-tone chime for routine notifications (non-startling for sleeping infant)
+  public playAlertChime(): void {
+    try {
+      const ctx = this.getContext();
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.25, now);
+      gain.connect(ctx.destination);
+
+      // Tone 1 (C5: 523Hz)
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, now);
+      const g1 = ctx.createGain();
+      g1.gain.setValueAtTime(0.3, now);
+      g1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(g1);
+      g1.connect(gain);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      // Tone 2 (E5: 659Hz)
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, now + 0.14);
+      const g2 = ctx.createGain();
+      g2.gain.setValueAtTime(0.35, now + 0.14);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      osc2.connect(g2);
+      g2.connect(gain);
+      osc2.start(now + 0.14);
+      osc2.stop(now + 0.65);
+    } catch (e) {
+      // AudioContext might be blocked before first interaction
+    }
+  }
 }
 
 export const audioSynthesizer = new AudioEngine();

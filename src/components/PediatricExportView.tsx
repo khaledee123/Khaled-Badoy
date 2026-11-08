@@ -1,6 +1,17 @@
-import React from 'react';
-import { Printer, Download, FileText, CheckCircle2, AlertCircle, Calendar, Stethoscope, Baby } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import {
+  Printer,
+  Download,
+  Stethoscope,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  FileCheck,
+} from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { BabyProfile, AnalysisResult, RoutineStatus } from '../types';
+import { GrowthMetricsSection } from './GrowthMetricsSection';
 
 interface PediatricExportViewProps {
   activeBaby: BabyProfile;
@@ -12,10 +23,13 @@ interface PediatricExportViewProps {
 export const PediatricExportView: React.FC<PediatricExportViewProps> = ({
   activeBaby,
   history,
-  routine,
   lang,
 }) => {
   const isAr = lang === 'ar';
+  const reportRef = useRef<HTMLDivElement | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfSuccessMessage, setPdfSuccessMessage] = useState<string | null>(null);
+
   const babyHistory = history.filter(h => h.babyId === activeBaby.id);
 
   const calculateAgeDays = (birthDate: string) => {
@@ -39,6 +53,66 @@ export const PediatricExportView: React.FC<PediatricExportViewProps> = ({
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    if (!reportRef.current) return;
+    setIsGeneratingPdf(true);
+    setPdfSuccessMessage(null);
+
+    try {
+      const element = reportRef.current;
+
+      // Capture high-definition canvas snapshot
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 1280,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const imgWidth = 210; // A4 standard width in mm
+      const pageHeight = 297; // A4 standard height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // First page
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add succeeding pages if content overflows 1 page
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `Nafas_Pediatric_Summary_${activeBaby.name}_${dateStr}.pdf`;
+      pdf.save(filename);
+
+      setPdfSuccessMessage(
+        isAr
+          ? `تم تحميل التقرير الطبي (${filename}) بنجاح!`
+          : `Pediatric report (${filename}) generated successfully!`
+      );
+      setTimeout(() => setPdfSuccessMessage(null), 5000);
+    } catch (err: any) {
+      console.warn('html2canvas rendering warning, fallback to native print/pdf:', err);
+      window.print();
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header with Export Action */}
@@ -54,22 +128,56 @@ export const PediatricExportView: React.FC<PediatricExportViewProps> = ({
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
             {isAr
-              ? 'وثيقة طبية ملخصة توثق النبرات الصوتية، نوبات المغص، وتجاوب الرضيع مع الرضاعة والنوم لتقديمها في موعد الفحص الدوري.'
-              : 'Structured clinical cry summary ready for presentation at well-baby pediatric visits.'}
+              ? 'وثيقة طبية ملخصة توثق النبرات الصوتية، نوبات المغص، وتجاوب الرضيع مع الرضاعة والنوم ومخططات النمو البدني لتقديمها في موعد الفحص الدوري.'
+              : 'Structured clinical cry and physical growth summary ready for presentation at well-baby pediatric visits.'}
           </p>
         </div>
 
-        <button
-          onClick={handlePrint}
-          className="px-5 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-colors flex items-center gap-2 self-start sm:self-auto"
-        >
-          <Printer className="w-4 h-4" />
-          <span>{isAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto print:hidden">
+          {/* Download PDF Button */}
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isGeneratingPdf}
+            className="px-4 py-2.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 rounded-xl shadow-sm transition-all flex items-center gap-2"
+          >
+            {isGeneratingPdf ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{isAr ? 'جاري تجهيز PDF...' : 'Generating PDF...'}</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>{isAr ? 'تحميل تقرير PDF' : 'Download PDF Summary'}</span>
+              </>
+            )}
+          </button>
+
+          {/* Print Button */}
+          <button
+            onClick={handlePrint}
+            className="px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            <span>{isAr ? 'طباعة مباشرة' : 'Print'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Printable Clinical Sheet */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0">
+      {/* Success Notification Banner */}
+      {pdfSuccessMessage && (
+        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center gap-2.5 shadow-sm animate-fade-in print:hidden">
+          <FileCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="font-semibold">{pdfSuccessMessage}</span>
+        </div>
+      )}
+
+      {/* Printable Clinical Sheet (Captured for PDF) */}
+      <div
+        ref={reportRef}
+        data-report-container="true"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0"
+      >
         {/* Document Header */}
         <div className="flex items-center justify-between pb-6 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3">
@@ -78,10 +186,10 @@ export const PediatricExportView: React.FC<PediatricExportViewProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                {isAr ? 'تقرير نَفَس الصوتي السريري للأطفال الرضع' : 'Nafas Infant Clinical Acoustic Report'}
+                {isAr ? 'تقرير نَفَس الصوتي السريري ومؤشرات نمو الرضيع' : 'Nafas Infant Clinical Acoustic & Growth Report'}
               </h3>
               <p className="text-xs text-slate-500">
-                {isAr ? 'منصة ذكاء اصطناعي لمعايرة بكاء الرضع وفهم مؤشرات الصحة العيادية' : 'Pediatric Cry Analytics System'}
+                {isAr ? 'منصة ذكاء اصطناعي لمعايرة بكاء الرضع ومتابعة التطور البدني' : 'Pediatric Cry Analytics & Physical Growth Dossier'}
               </p>
             </div>
           </div>
@@ -202,6 +310,9 @@ export const PediatricExportView: React.FC<PediatricExportViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Growth Metrics & Development Trajectory (Recharts) */}
+        <GrowthMetricsSection activeBaby={activeBaby} lang={lang} />
 
         {/* Doctor's Signature & Field for Notes */}
         <div className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs">

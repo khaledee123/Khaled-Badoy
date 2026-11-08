@@ -286,9 +286,9 @@ Provide:
         }
         contents.push({ text: promptText });
 
-        const response = await ai.models.generateContent({
+        const generatePromise = ai.models.generateContent({
           model: 'gemini-3.8-flash',
-          contents: { parts: contents },
+          contents: contents.length > 1 ? contents : promptText,
           config: {
             systemInstruction:
               'You are a senior clinical pediatric sound analyst and neonatal acoustic engineer. You produce factual, nuanced probability distributions and acoustic explanations in modern Arabic.',
@@ -335,12 +335,19 @@ Provide:
           },
         });
 
+        // Strict 3.5s timeout race so client never hangs or throws Failed to fetch
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini API timeout - switching to clinical heuristic')), 3500)
+        );
+
+        const response: any = await Promise.race([generatePromise, timeoutPromise]);
+
         const parsed = JSON.parse(response.text || '{}');
         if (parsed.probabilities && parsed.probabilities.length > 0) {
           return res.json(parsed);
         }
       } catch (geminiError) {
-        console.warn('Gemini API call failed, falling back to clinical acoustic engine:', geminiError);
+        console.warn('Gemini API call timed out or failed, falling back to clinical acoustic engine:', geminiError);
       }
     }
 
@@ -358,7 +365,10 @@ async function startServer() {
 
   if (isDev) {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
