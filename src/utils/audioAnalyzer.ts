@@ -32,13 +32,13 @@ export class LiveAudioAnalyzer {
         await this.audioCtx.resume();
       }
 
+      try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
       });
+    } catch {
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
 
       const source = this.audioCtx.createMediaStreamSource(this.mediaStream);
       this.analyser = this.audioCtx.createAnalyser();
@@ -48,8 +48,11 @@ export class LiveAudioAnalyzer {
       // Setup recorder for sending audio to API
       this.recordedChunks = [];
       try {
-        const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
-        this.mediaRecorder = new MediaRecorder(this.mediaStream, { mimeType });
+        const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+      const supportedType = types.find(t => MediaRecorder.isTypeSupported(t));
+      this.mediaRecorder = supportedType
+        ? new MediaRecorder(this.mediaStream, { mimeType: supportedType })
+        : new MediaRecorder(this.mediaStream);
         this.mediaRecorder.ondataavailable = e => {
           if (e.data.size > 0) {
             this.recordedChunks.push(e.data);
